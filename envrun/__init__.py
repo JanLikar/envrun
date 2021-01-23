@@ -3,6 +3,7 @@ import click
 
 import configparser
 import os
+import shlex
 import subprocess
 import sys
 import typing
@@ -17,10 +18,20 @@ import typing
     default=".envrun",
     show_default=True,
 )
-@click.option("-p", "--prefix", default="")
+@click.option(
+    "-p",
+    "--prefix",
+    help="Set a prefix to allow multiple independent sets of variables.",
+    default="",
+)
 @click.option("--interactive/--non-interactive", "-i/", default=False)
 @click.argument("command", required=True, nargs=-1)
-def main(config_file, prefix, interactive, command):
+def main(config_file, prefix, interactive,  command):
+    """Execute COMMAND with env variables from .envrun
+
+    If COMMAND uses flags, prepend it with " -- ".
+    """
+
     config = configparser.ConfigParser()
 
     # Make config file case-sensitive
@@ -44,11 +55,13 @@ def get_vars(config, prefix: str, interactive: bool, environ):
         if k == "DEFAULT":
             continue
 
+        item = config[k]
+
         if k == "vars":
             vars = {**vars, **config[k]}
 
         elif k.startswith("vars."):
-            key = k[5:]
+            key = item.get("key", k[5:])
             var_type = config[k]["type"]
 
             if var_type == "keyring":
@@ -63,21 +76,41 @@ def get_vars(config, prefix: str, interactive: bool, environ):
 
                 if secret is None:
                     secret = handle_missing(key, interactive)
+            elif var_type == "shell":
+                command = config[k]["command"]
+
+                secret = get_from_command(command)
+            elif var_type == "file":
+                # Tilde expansion
+                filename = os.path.expanduser(item["file"])
+
+                with open(filename) as f:
+                    secret = f.read()
 
             else:
                 bail(f"Unsupported var type: {var_type} in {k}")
 
             vars[key] = secret
 
+    return vars
 
-def handle_missing(key: str, interactive: bool):
+
+def handle_missing(key: str, interactive: bool) -> str:
     if interactive:
         val = input(f"Value for {key}")
     else:
         bail(f"Key {key} not set. Use -i")
 
 
-def get_gnome_keyring(prefix:str, key:str, interactive: bool) -> typing.Optional[str]:
+def get_from_command(command: str) -> str:
+    r = subprocess.run(
+        shlex.split(command), capture_output=True, check=True, shell=True, text=True
+    )
+
+    return r.stdout
+
+
+def get_gnome_keyring(prefix: str, key: str, interactive: bool) -> typing.Optional[str]:
     import secretstorage
 
     connection = secretstorage.dbus_init()

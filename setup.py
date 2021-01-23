@@ -20,16 +20,17 @@ dev_require = [
 
 setup(
     name='envrun',
-    version='0.0',
-    description='',  # noqa
+    version='0.0.3',
+    description='Run a command with dynamically-sourced environment variables.',
     long_description=README + '\n\n' + CHANGES,
+    long_description_content_type="text/markdown",
     classifiers=[
         "Programming Language :: Python",
         "Development Status :: 4 - Beta",
         "Environment :: Console",
         "Intended Audience :: Developers",
         "Intended Audience :: System Administrators",
-        "License :: OSI Approved :: BSD License",
+        "License :: OSI Approved :: MIT License",
         "Topic :: Security",
         "Topic :: Utilities",
     ],
@@ -44,6 +45,7 @@ setup(
     install_requires=requires,
     entry_points="""\
         [console_scripts]
-        envrun=src.envrun:main
+        envrun=envrun:main
       """,
+    python_requires='>=3.6',
 )
