@@ -99,6 +99,6 @@ Make your changes.
 
 Run code formatter:
 
-    black src
+    black envrun
 
 And finally: create a pull request.
