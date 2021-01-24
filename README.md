@@ -41,30 +41,31 @@ For debugging, invoke the `env` command, which should be available on most Unix-
     envrun env
 
 
-### Example .envrun file
+### Example .envrun.toml file
 
     [vars]
-    ; Variables can be hardcoded here
-    ENV=dev
-
-    [vars.SECRET]
-    ; This will set SECRET from Gnome keyring.
-    type = keyring
+    # Hardcoded vars can be placed here.
+    env = "development"
 
     [vars.MY_PATH]
-    ; MY_PATH will be set to the value of the $PATH env variable
-    type = env
-    key = PATH
+    # MY_PATH will be set to the value of $PATH.
+    type = "env"
+    key = "PATH"
+
+
+    [vars.KEYRING_VAR]
+    # KEYRING_VAR will be set from Gnome keyring.
+    type = "keyring"
 
     [vars.PWD]
-    ; PWD will be set to captured stdout of the pwd command
-    type = shell
-    command = pwd
+    # PWD will be set to the output of the `pwd` command.
+    type = "shell"
+    command = "pwd"
 
     [vars.SSH_PUBKEY]
-    ; SSH_PUBKEY will be set to the contents of id_rsa.pub
-    type = file
-    file = ~/.ssh/id_rsa.pub
+    # SSH_PUBKEY will be set to the contents of id_rsa.pub.
+    type = "file"
+    file = "~/.ssh/id_rsa.pub"
 
 
 ## Use cases

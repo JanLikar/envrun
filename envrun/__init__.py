@@ -1,5 +1,7 @@
 from typing import Optional
+
 import click
+import toml
 
 import configparser
 import os
@@ -15,7 +17,7 @@ import typing
     "-c",
     "config_file",
     type=click.Path(),
-    default=".envrun",
+    default=".envrun.toml",
     show_default=True,
 )
 @click.option(
@@ -31,13 +33,7 @@ def main(config_file, prefix, interactive,  command):
 
     If COMMAND uses flags, prepend it with " -- ".
     """
-
-    config = configparser.ConfigParser()
-
-    # Make config file case-sensitive
-    config.optionxform = lambda o: o
-
-    config.read(config_file)
+    config = toml.load(config_file )
 
     env = get_vars(config, prefix, interactive, environ=os.environ)
 
@@ -49,55 +45,52 @@ def main(config_file, prefix, interactive,  command):
 
 
 def get_vars(config, prefix: str, interactive: bool, environ):
-    vars = {}
+    var_definitions = config["vars"]
 
-    for k in config:
-        if k == "DEFAULT":
-            continue
+    output_vars = {}
 
-        item = config[k]
+    for (var_name, var) in var_definitions.items():
+        if isinstance(var, str):
+            output_vars[var_name] = var
 
-        if k == "vars":
-            vars = {**vars, **config[k]}
-
-        elif k.startswith("vars."):
-            key = item.get("key", k[5:])
-            var_type = config[k]["type"]
+        else:
+            var_key = var.get("key", var_name)
+            var_type = var["type"]
 
             if var_type == "keyring":
-                secret = get_gnome_keyring(prefix, key, interactive)
+                secret = get_gnome_keyring(prefix, var_key, interactive)
 
                 if secret is None:
-                    secret = handle_missing(key, interactive)
-                    set_gnome_keyring(prefix, key, secret)
+                    secret = handle_missing(var_key, interactive)
+                    set_gnome_keyring(prefix, var_key, secret, interactive)
 
             elif var_type == "env":
-                secret = environ.get(key)
+                secret = environ.get(var_key)
 
                 if secret is None:
-                    secret = handle_missing(key, interactive)
+                    secret = handle_missing(var_key, interactive)
             elif var_type == "shell":
-                command = config[k]["command"]
+                command = var["command"]
 
                 secret = get_from_command(command)
             elif var_type == "file":
                 # Tilde expansion
-                filename = os.path.expanduser(item["file"])
+                filename = os.path.expanduser(var["file"])
 
                 with open(filename) as f:
                     secret = f.read()
 
             else:
-                bail(f"Unsupported var type: {var_type} in {k}")
+                bail(f"Unsupported var type: {var_type} for {var_name}")
 
-            vars[key] = secret
+            output_vars[var_key] = secret
 
-    return vars
+    return output_vars
 
 
 def handle_missing(key: str, interactive: bool) -> str:
     if interactive:
-        val = input(f"Value for {key}")
+        return input(f"Value for {key}> ")
     else:
         bail(f"Key {key} not set. Use -i")
 
@@ -142,7 +135,7 @@ def set_gnome_keyring(prefix: str, key: str, secret: str, interactive: bool):
     item = collection.create_item(
         f"MyApp: {key}",
         {"application": "envrun", "prefix": str(prefix), "key": key},
-        secret,
+        secret.encode("utf-8"),
     )
 
 
