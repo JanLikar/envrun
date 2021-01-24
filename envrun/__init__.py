@@ -20,22 +20,16 @@ import typing
     default=".envrun.toml",
     show_default=True,
 )
-@click.option(
-    "-p",
-    "--prefix",
-    help="Set a prefix to allow multiple independent sets of variables.",
-    default="",
-)
 @click.option("--interactive/--non-interactive", "-i/", default=False)
 @click.argument("command", required=True, nargs=-1)
-def main(config_file, prefix, interactive,  command):
+def main(config_file, interactive,  command):
     """Execute COMMAND with env variables from .envrun
 
     If COMMAND uses flags, prepend it with " -- ".
     """
     config = toml.load(config_file )
 
-    env = get_vars(config, prefix, interactive, environ=os.environ)
+    env = get_vars(config, interactive, environ=os.environ)
 
     try:
         r = subprocess.run(command, env=env)
@@ -44,7 +38,7 @@ def main(config_file, prefix, interactive,  command):
         bail(f"Command not found: {command[0]}")
 
 
-def get_vars(config, prefix: str, interactive: bool, environ):
+def get_vars(config, interactive: bool, environ):
     var_definitions = config["vars"]
 
     output_vars = {}
@@ -58,11 +52,11 @@ def get_vars(config, prefix: str, interactive: bool, environ):
             var_type = var["type"]
 
             if var_type == "keyring":
-                secret = get_gnome_keyring(prefix, var_key, interactive)
+                secret = get_gnome_keyring(var_key, interactive)
 
                 if secret is None:
                     secret = handle_missing(var_key, interactive)
-                    set_gnome_keyring(prefix, var_key, secret, interactive)
+                    set_gnome_keyring(var_key, secret, interactive)
 
             elif var_type == "env":
                 secret = environ.get(var_key)
@@ -103,7 +97,7 @@ def get_from_command(command: str) -> str:
     return r.stdout
 
 
-def get_gnome_keyring(prefix: str, key: str, interactive: bool) -> typing.Optional[str]:
+def get_gnome_keyring(key: str, interactive: bool) -> typing.Optional[str]:
     import secretstorage
 
     connection = secretstorage.dbus_init()
@@ -113,7 +107,7 @@ def get_gnome_keyring(prefix: str, key: str, interactive: bool) -> typing.Option
 
     secret = next(
         collection.search_items(
-            {"application": "envrun", "prefix": str(prefix), "key": str(key)}
+            {"application": "envrun", "key": str(key)}
         ),
         None,
     )
@@ -124,7 +118,7 @@ def get_gnome_keyring(prefix: str, key: str, interactive: bool) -> typing.Option
     return secret.get_secret()
 
 
-def set_gnome_keyring(prefix: str, key: str, secret: str, interactive: bool):
+def set_gnome_keyring(key: str, secret: str, interactive: bool):
     import secretstorage
 
     connection = secretstorage.dbus_init()
@@ -134,7 +128,7 @@ def set_gnome_keyring(prefix: str, key: str, secret: str, interactive: bool):
 
     item = collection.create_item(
         f"MyApp: {key}",
-        {"application": "envrun", "prefix": str(prefix), "key": key},
+        {"application": "envrun", "key": key},
         secret.encode("utf-8"),
     )
 

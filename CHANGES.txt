@@ -3,3 +3,4 @@
 ### 0.0.4 (Unreleased)
 
   - Use Toml instead of ini files for config
+  - Remove --prefix; namespacing will be implemented differently
