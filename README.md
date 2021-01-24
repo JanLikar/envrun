@@ -1,4 +1,4 @@
-# envrun
+<img src="https://img.shields.io/pypi/v/envrun"/>
 
 `envrun` is a CLI tool that runs a command with dynamically-sourced env variables.
 
