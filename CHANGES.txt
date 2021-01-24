@@ -4,3 +4,5 @@
 
   - Use Toml instead of ini files for config
   - Remove --prefix; namespacing will be implemented differently
+  - Update config file format
+  - Add support for 3rd party storage backends

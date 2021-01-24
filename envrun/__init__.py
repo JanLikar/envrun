@@ -1,14 +1,12 @@
-from typing import Optional
-
 import click
 import toml
 
-import configparser
-import os
-import shlex
+import pkg_resources
 import subprocess
 import sys
 import typing
+
+from . import default_backends
 
 
 @click.command()
@@ -29,7 +27,7 @@ def main(config_file, interactive,  command):
     """
     config = toml.load(config_file )
 
-    env = get_vars(config, interactive, environ=os.environ)
+    env = get_vars(config, interactive)
 
     try:
         r = subprocess.run(command, env=env)
@@ -38,110 +36,90 @@ def main(config_file, interactive,  command):
         bail(f"Command not found: {command[0]}")
 
 
-def get_vars(config, interactive: bool, environ):
-    var_definitions = config["vars"]
-
+def get_vars(config, interactive: bool):
     output_vars = {}
 
-    for (var_name, var) in var_definitions.items():
-        if isinstance(var, str):
-            output_vars[var_name] = var
+    backends = register_backends(config)
 
-        else:
-            var_key = var.get("key", var_name)
-            var_type = var["type"]
+    for backend_name, vars in config["vars"].items():
+        print(backend_name)
+        if backend_name not in backends:
+            bail(f"'{backend_name}' backend not found.")
 
-            if var_type == "keyring":
-                secret = get_gnome_keyring(var_key, interactive)
+        backend = backends[backend_name]
 
-                if secret is None:
-                    secret = handle_missing(var_key, interactive)
-                    set_gnome_keyring(var_key, secret, interactive)
-
-            elif var_type == "env":
-                secret = environ.get(var_key)
-
-                if secret is None:
-                    secret = handle_missing(var_key, interactive)
-            elif var_type == "shell":
-                command = var["command"]
-
-                secret = get_from_command(command)
-            elif var_type == "file":
-                # Tilde expansion
-                filename = os.path.expanduser(var["file"])
-
-                with open(filename) as f:
-                    secret = f.read()
-
-            else:
-                bail(f"Unsupported var type: {var_type} for {var_name}")
-
-            output_vars[var_key] = secret
+        for name, conf in vars.items():
+            output_vars[name] = get_var(backend, name, conf, interactive)
 
     return output_vars
 
 
-def handle_missing(key: str, interactive: bool) -> str:
-    if interactive:
-        return input(f"Value for {key}> ")
+def get_var(
+    backend: default_backends.Backend,
+    name: str,
+    conf: typing.Union[str, dict, list],
+    interactive: bool
+) -> str:
+    if not isinstance(conf, (str, dict)):
+        bail(f"{name} must be either a string or a mapping.")
+
+    key = _var_key(name, conf)
+
+    try:
+        return backend[key]
+    except KeyError:
+        secret = handle_missing(backend, key, interactive)
+
+        try:
+            backend[key] = secret
+        except NotImplementedError:
+            pass
+
+        return secret
+
+
+def _var_key(var_name: str, var_conf: typing.Union[str, dict]):
+    if isinstance(var_conf, str):
+        return var_conf
+    elif var_conf.get("key", None) is not None:
+        return var_conf["key"]
     else:
-        bail(f"Key {key} not set. Use -i")
+        return var_name
 
 
-def get_from_command(command: str) -> str:
-    r = subprocess.run(
-        shlex.split(command), capture_output=True, check=True, shell=True, text=True
-    )
+def register_backends(config):
+    available_backends = default_backends.get_available()
+    registered_backends = {}
 
-    return r.stdout
+    for name, backend in available_backends.items():
+        registered_backends[name] = backend(name=name, backend_config={})
 
+    available_backends.update(extra_backends())
 
-def get_gnome_keyring(key: str, interactive: bool) -> typing.Optional[str]:
-    import secretstorage
+    for name, backend in config.get("backends", {}).items():
+        backend_type = backend["type"]
 
-    connection = secretstorage.dbus_init()
-    collection = secretstorage.get_default_collection(connection)
+        if backend_type in available_backends:
+            registered_backends[name] = available_backends[backend_type](name=name, backend_config=backend)
+        else:
+            bail(f"Unsupported backend type: {backend_type}")
 
-    ensure_unlocked(collection, interactive)
-
-    secret = next(
-        collection.search_items(
-            {"application": "envrun", "key": str(key)}
-        ),
-        None,
-    )
-
-    if not secret:
-        return None
-
-    return secret.get_secret()
+    return registered_backends
 
 
-def set_gnome_keyring(key: str, secret: str, interactive: bool):
-    import secretstorage
-
-    connection = secretstorage.dbus_init()
-    collection = secretstorage.get_default_collection(connection)
-
-    ensure_unlocked(collection, interactive)
-
-    item = collection.create_item(
-        f"MyApp: {key}",
-        {"application": "envrun", "key": key},
-        secret.encode("utf-8"),
-    )
+def extra_backends() -> dict:
+    return {
+        entry_point.name: entry_point.load()
+        for entry_point
+        in pkg_resources.iter_entry_points('envrun.backends')
+    }
 
 
-def ensure_unlocked(collection, interactive: bool):
-    if not collection.is_locked():
-        return
+def handle_missing(backend: default_backends.Backend, key: str, interactive: bool) -> str:
+    if not interactive:
+        bail(f"Key '{backend.name}.{key}' not set. Set it manually or use -i for a prompt.")
 
-    if interactive:
-        collection.unlock()
-        return
-
-    bail("Secret storage locked. Unlock it or run with -i flag.")
+    return input(f"Value for {backend.name}.{key}> ")
 
 
 def eprint(*args, **kwargs):

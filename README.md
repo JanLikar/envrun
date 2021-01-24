@@ -2,9 +2,7 @@
 
 `envrun` is a CLI tool that runs a command with dynamically-sourced env variables.
 
-Currently, only the `keyring` backend is implemented, which uses a libsecret-compatible service, eg. Gnome keyring.
-
-Alternatively, a variable can be sourced from a file, output of an arbitrary coommand, of from the environment.
+A variable can be sourced from a file, output of an arbitrary coommand, from the environment, or from any [compatible backend](#backends)
 
 [PyPi](https://pypi.org/project/envrun/)
 
@@ -26,12 +24,12 @@ Other installation options are not yet available.
 
 To pass options to the invoked command, prepend the command with `--`
 
-    envrun -- ls -hal
+    envrun -- terraform apply -auto-approve
 
 
 Passing a `-i / --interactive` flag will prompt for missing variable values.
 
-    envrun -i ls
+    envrun -i pip install
 
 If supported by the storage backend, values provided will get stored automatically.
 
@@ -41,43 +39,63 @@ For debugging, invoke the `env` command, which should be available on most Unix-
     envrun env
 
 
-### Example .envrun.toml file
+### .envrun.toml file
 
-    [vars]
-    # Hardcoded vars can be placed here.
-    env = "development"
+Variables are namespaced using the following convention:
 
-    [vars.MY_PATH]
+    vars.<backend>.<var_name> = <var>
+
+The following lines are equivalent:
+
+    vars.<backend>.<var_name> = { key="x }
+    vars.<backend>.<var_name> = "x"
+
+The "key" has a backend-specific meaning. Generally, it represents
+the most commonly-used setting for a particular backend.
+
+ See https://toml.io/ for file format specifics.
+
+
+#### Example
+
+    # Variable PWD will be set to the output of `ls -al`
+    vars.shell.PWD = "ls -al"
+
     # MY_PATH will be set to the value of $PATH.
-    type = "env"
-    key = "PATH"
+    vars.env.MY_PATH = "PATH"
+
+    [vars.const]
+        # Hardcoded vars can be placed here.
+        ENV = "development"
+        TWO = "2"
+
+    [vars.file.SSH_PUBKEY]
+        # SSH_PUBKEY will be set to the contents of id_rsa.pub.
+        key = "~/.ssh/id_rsa.pub"
 
 
-    [vars.KEYRING_VAR]
-    # KEYRING_VAR will be set from Gnome keyring.
-    type = "keyring"
+## Backends
 
-    [vars.PWD]
-    # PWD will be set to the output of the `pwd` command.
-    type = "shell"
-    command = "pwd"
-
-    [vars.SSH_PUBKEY]
-    # SSH_PUBKEY will be set to the contents of id_rsa.pub.
-    type = "file"
-    file = "~/.ssh/id_rsa.pub"
+  - const (builtin)
+  - file (builtin)
+  - env (builtin)
+  - shell (builtin)
+  - [envrun-vault](https://github.com/janlikar/envrun-vault)
 
 
 ## Use cases
 ### 12-Factor apps
 According to the [Twelve-Factor App](https://12factor.net/) methodology, app secrets should be configured from the environment.
-`envrun` can neatly support this workflow by keeping the `.envrun` config files in version control and sourcing the config values
+`envrun` can neatly support this workflow by keeping the `.envrun.toml` config files in version control and sourcing the config values
 from storage backends.
 
 ### Infrastructure as code
 When running configuration managament and Infrastructure as Code tools, there is often a need to inject secrets into the tool.
+Different tools have different ways of handling configuration and secret managament, and they can rarely work together.
 
-`envrun` provides a concise way of defining and passing the variables to tools like `terraform` and `ansible`.
+Environment variables provide a common ground, as they are supported by the majority of popular tools.
+
+This is where `envrun` comes into play - it provides a concise and extensible way of defining and passing the variables to tools like `terraform` and `ansible`.
 
 ### Generating config files
 Combined with the excelent [envsubst](https://linux.die.net/man/1/envsubst), `envrun` can be used as a rudimentary templating engine.

@@ -17,6 +17,7 @@ requires = [
 dev_require = [
     'black',
     'pip-tools',
+    'pdbpp',
 ]
 
 setup(
