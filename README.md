@@ -35,8 +35,19 @@ For debugging, invoke the `env` command, which should be available on most Unix-
 
     envrun env
 
+If invoking a COMMAND which uses flags, prepend it with " -- ":
 
-### .envrun.toml file
+    envrun -- ls -al
+
+If wanting to execute multiple commands within the same environment, COMMAND can be passed as a quoted string:
+
+    envrun "ls -a | sort"
+
+
+### envrun.toml file
+
+Envrun starts searching for a envrun.toml file in the current working directory, checking parent directories
+if no envrun.toml file is found.
 
 Variables are namespaced using the following convention:
 

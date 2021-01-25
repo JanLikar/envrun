@@ -10,3 +10,4 @@
   - Pass env vars from the outer environment, unless --isolated is used
   - Temporarily remove --config flag
   - Use parent directories to search for config files
+  - envrun now executes the supplied command in a subshell

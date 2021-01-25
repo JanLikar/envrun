@@ -11,15 +11,12 @@ import typing
 from . import default_backends
 
 
-@click.command()
+@click.command(epilog=HELP_TEXT)
 @click.option("--non-interactive", is_flag=True, help="Don't prompt for missing variable values.")
-@click.option('--isolated', is_flag=True, help="Don't pass the variables from the outer environment.")
+@click.option('--isolated', is_flag=True, help="Start with an empty environment.")
 @click.argument("command", required=True, nargs=-1)
 def main(non_interactive, isolated, command):
-    """Execute COMMAND with env variables from .envrun
-
-    If COMMAND uses flags, prepend it with " -- ".
-    """
+    """Execute COMMAND with dynamically-sourced environment variables, as configured in envrun.toml."""
     interactive = not non_interactive
     config_path = get_config_path(os.getcwd())
     config = {}
@@ -34,7 +31,7 @@ def main(non_interactive, isolated, command):
     env.update(get_vars(config, interactive))
 
     try:
-        r = subprocess.run(command, env=env)
+        r = subprocess.run(command, env=env, shell=True)
         sys.exit(r.returncode)
     except FileNotFoundError:
         bail(f"Command not found: {command[0]}")
@@ -56,7 +53,7 @@ def get_vars(config, interactive: bool):
 
     backends = register_backends(config)
 
-    for backend_name, vars in config["vars"].items():
+    for backend_name, vars in config.get("vars", {}).items():
         if backend_name not in backends:
             bail(f"'{backend_name}' backend not found.")
 
