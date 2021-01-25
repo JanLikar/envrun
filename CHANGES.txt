@@ -6,3 +6,7 @@
   - Remove --prefix; namespacing will be implemented differently
   - Update config file format
   - Add support for 3rd party storage backends
+  - Make interactive mode the default
+  - Pass env vars from the outer environment, unless --isolated is used
+  - Temporarily remove --config flag
+  - Use parent directories to search for config files

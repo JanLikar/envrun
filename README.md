@@ -19,19 +19,16 @@ Other installation options are not yet available.
 
 ## Usage
 
-    envrun [OPTIONS] COMMAND...
+    Usage: envrun [OPTIONS] COMMAND...
 
+    Execute COMMAND with env variables from .envrun
 
-To pass options to the invoked command, prepend the command with `--`
+    If COMMAND uses flags, prepend it with " -- ".
 
-    envrun -- terraform apply -auto-approve
-
-
-Passing a `-i / --interactive` flag will prompt for missing variable values.
-
-    envrun -i pip install
-
-If supported by the storage backend, values provided will get stored automatically.
+    Options:
+    --non-interactive  Don't prompt for missing variable values.
+    --isolated         Don't pass the variables from the outer environment.
+    --help             Show this message and exit.
 
 
 For debugging, invoke the `env` command, which should be available on most Unix-like systems:

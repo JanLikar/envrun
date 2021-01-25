@@ -1,6 +1,8 @@
 import click
 import toml
 
+import os
+import pathlib
 import pkg_resources
 import subprocess
 import sys
@@ -10,24 +12,26 @@ from . import default_backends
 
 
 @click.command()
-@click.option(
-    "--config",
-    "-c",
-    "config_file",
-    type=click.Path(),
-    default=".envrun.toml",
-    show_default=True,
-)
-@click.option("--interactive/--non-interactive", "-i/", default=False)
+@click.option("--non-interactive", is_flag=True, help="Don't prompt for missing variable values.")
+@click.option('--isolated', is_flag=True, help="Don't pass the variables from the outer environment.")
 @click.argument("command", required=True, nargs=-1)
-def main(config_file, interactive,  command):
+def main(non_interactive, isolated, command):
     """Execute COMMAND with env variables from .envrun
 
     If COMMAND uses flags, prepend it with " -- ".
     """
-    config = toml.load(config_file )
+    interactive = not non_interactive
+    config_path = get_config_path(os.getcwd())
+    config = {}
+    env = {}
 
-    env = get_vars(config, interactive)
+    if config_path is not None:
+        config = toml.load(config_path)
+
+    if not isolated:
+        env = os.environ
+
+    env.update(get_vars(config, interactive))
 
     try:
         r = subprocess.run(command, env=env)
@@ -36,13 +40,23 @@ def main(config_file, interactive,  command):
         bail(f"Command not found: {command[0]}")
 
 
+def get_config_path(cwd: str):
+    candidates = [pathlib.PurePath(cwd).joinpath("envrun.toml")]
+    candidates.extend(p.joinpath("envrun.toml") for p in pathlib.PurePath(cwd).parents)
+
+    for c in reversed(candidates):
+        if pathlib.Path(*c.parts).exists():
+            return c
+
+    return None
+
+
 def get_vars(config, interactive: bool):
     output_vars = {}
 
     backends = register_backends(config)
 
     for backend_name, vars in config["vars"].items():
-        print(backend_name)
         if backend_name not in backends:
             bail(f"'{backend_name}' backend not found.")
 
