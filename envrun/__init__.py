@@ -27,7 +27,8 @@ def main(non_interactive, isolated, command):
         config = toml.load(config_path)
 
     if not isolated:
-        env = os.environ
+        # We must convert to dict, os.environ doesn't handle unicode keys.
+        env = {k:v for k,v in os.environ.items()}
 
     env.update(get_vars(config, interactive))
 
