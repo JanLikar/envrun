@@ -22,7 +22,7 @@ dev_require = [
 
 setup(
     name='envrun',
-    version='0.0.4',
+    version='0.0.5',
     description='Run a command with dynamically-sourced environment variables.',
     long_description=README + '\n\n' + CHANGES,
     long_description_content_type="text/markdown",
