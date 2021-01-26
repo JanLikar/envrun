@@ -1,10 +1,19 @@
-<img src="https://img.shields.io/pypi/v/envrun"/>
+<a href="https://pypi.org/project/envrun/"><img src="https://img.shields.io/pypi/v/envrun"/></a>
 
 `envrun` is a CLI tool that runs a command with dynamically-sourced env variables.
 
-A variable can be sourced from a file, output of an arbitrary coommand, from the environment, or from any [compatible backend](#backends)
+> Sick of scrubbing secrets from `.bash_history`?
+> Do your fingers hurt from hitting ctrl+c and ctrl+v while copying the API token - for 154th time?
+> This is a tool for you.
 
-[PyPi](https://pypi.org/project/envrun/)
+When working on modern projects it is often difficult to manage application secrets in a sane way.
+Sure, there are soleutions out there. Some of them even work just fine!
+
+So... why a new tool? I wanted a tool that would fit into many different workflows.
+When locally running commands that need to have access to secrets, managing deployments with multiple differing sets
+of variables, injecting secrets into config files,...
+
+In `envrun` a variable can be sourced from a file, output of an arbitrary coommand, from the environment, or from any [compatible backend](#backends).
 
 This tool is still under heavy development and its API might change at any time. Use with caution.
 
@@ -66,8 +75,8 @@ the most commonly-used setting for a particular backend.
 
 #### Example
 
-    # Variable PWD will be set to the output of `ls -al`
-    vars.shell.PWD = "ls -al"
+    # Variable LS will be set to the output of `ls -al`
+    vars.shell.LS = "ls -al"
 
     # MY_PATH will be set to the value of $PATH.
     vars.env.MY_PATH = "PATH"
@@ -80,15 +89,6 @@ the most commonly-used setting for a particular backend.
     [vars.file.SSH_PUBKEY]
         # SSH_PUBKEY will be set to the contents of id_rsa.pub.
         key = "~/.ssh/id_rsa.pub"
-
-
-## Backends
-
-  - const (builtin)
-  - file (builtin)
-  - env (builtin)
-  - shell (builtin)
-  - [envrun-vault](https://github.com/janlikar/envrun-vault)
 
 
 ## Use cases
@@ -111,6 +111,49 @@ Combined with the excelent [envsubst](https://linux.die.net/man/1/envsubst), `en
     envrun envsubst < nginx.conf.tmpl > nginx.conf
 
 This will generate `nginx.conf` from `nginx.conf.tmpl` and replace all strings like `$VAR` or `${VAR}` with their values - as provided by `envrun`.
+
+
+## Backends
+
+### const
+Used for setting static env variables.
+
+    [const.vars]
+    PATH = "/usr/bin"
+
+### file
+Used for setting a variable to contents of a file.
+
+    [file.vars]
+    PUBKEY = "~/.ssh/id_rsa.pub"
+
+
+### env
+Generally useful only when used with `--isolated`. Used for passing or renaming specific env vars.
+
+    [env.vars]
+    RENAMED_PATH = "PATH"
+
+### shell
+Used for setting static env variables.
+
+    [shell.vars]
+    GIT_REF = "git show-ref | head -1"
+
+### keyring
+The keyring backend currently supports key stores implementing freedesktop.org secret service protocol;
+most notably Gnome keyring and KSecretsService. MacOS and Windows is still a work in progress.
+
+Additionally, from version 2.5 KeepassXC should also work on systems that are D-Bus enabled (Linux). See See https://avaldes.co/2020/01/28/secret-service-keepassxc.html for details.
+
+
+    [keyring.vars.MY_SECRET]
+    key = "my-secret"
+
+
+### Extensions
+  - [envrun-vault](https://github.com/janlikar/envrun-vault) (pre-alpha)
+
 
 ## Contributing
 Create a virtualenv

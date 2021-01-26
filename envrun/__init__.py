@@ -11,7 +11,7 @@ import typing
 from . import default_backends
 
 
-@click.command(epilog=HELP_TEXT)
+@click.command()
 @click.option("--non-interactive", is_flag=True, help="Don't prompt for missing variable values.")
 @click.option('--isolated', is_flag=True, help="Start with an empty environment.")
 @click.argument("command", required=True, nargs=-1)
