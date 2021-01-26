@@ -1,6 +1,9 @@
 ## Changes
 
-### 0.0.4 (Unreleased)
+### 0.0.5 (Unreleased)
+Nothing yet
+
+### 0.0.4
 
   - Use Toml instead of ini files for config
   - Remove --prefix; namespacing will be implemented differently

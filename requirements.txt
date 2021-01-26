@@ -18,3 +18,5 @@ secretstorage==3.3.0
     # via envrun (setup.py)
 six==1.15.0
     # via cryptography
+toml==0.10.2
+    # via envrun (setup.py)

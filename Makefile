@@ -14,4 +14,5 @@ publish: venv
 
 clean:
 	rm -r dist || true
+	rm -r build || true
 	rm -r venv || true
