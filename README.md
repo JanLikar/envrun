@@ -7,10 +7,12 @@
 > while copying the API token - for 154th time?
 > This is a tool for you.
 
-When working on modern projects it is often difficult to manage application secrets in a sane way.
+When working on software projects it is often difficult to manage application secrets in a sane way.
+We're dealing with more API keys and certificates than ever!
+
 Sure, there are solutions out there. Some of them even work just fine!
 
-So... why a new tool? I wanted a tool that would fit into many different workflows.
+So... why a new tool? I wanted something that would fit into many different workflows.
 When locally running commands that need to have access to secrets, managing deployments with multiple differing sets
 of variables, injecting secrets into config files,...
 
@@ -54,10 +56,10 @@ If wanting to execute multiple commands within the same environment, COMMAND can
     envrun "ls -a | sort"
 
 
-### envrun.toml file
+### .envrun.toml file
 
-Envrun starts searching for a envrun.toml file in the current working directory, checking parent directories
-if no envrun.toml file is found.
+Envrun starts searching for a .envrun.toml file in the current working directory, checking parent directories
+if no .envrun.toml file is found.
 
 Variables are namespaced using the following convention:
 
@@ -114,7 +116,7 @@ Combined with the excelent [envsubst](https://linux.die.net/man/1/envsubst), `en
 This will generate `nginx.conf` from `nginx.conf.tmpl` and replace all strings like `$VAR` or `${VAR}` with their values - as provided by `envrun`.
 
 
-## Backends
+## Backends<a name="backends">
 
 ### const
 Used for setting static env variables.
@@ -145,7 +147,7 @@ Used for setting static env variables.
 The keyring backend currently supports key stores implementing freedesktop.org secret service protocol;
 most notably Gnome keyring and KSecretsService. MacOS and Windows is still a work in progress.
 
-Additionally, from version 2.5 KeepassXC should also work on systems that are D-Bus enabled (Linux). See See https://avaldes.co/2020/01/28/secret-service-keepassxc.html for details.
+Additionally, from version 2.5 KeepassXC should also work on systems that are D-Bus enabled (Linux). See https://avaldes.co/2020/01/28/secret-service-keepassxc.html for details.
 
 
     [vars.keyring.MY_SECRET]
