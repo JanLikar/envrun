@@ -17,7 +17,7 @@ from .utils import bail
 @click.option('--isolated', is_flag=True, help="Start with an empty environment.")
 @click.argument("command", required=True, nargs=-1)
 def main(non_interactive, isolated, command):
-    """Execute COMMAND with dynamically-sourced environment variables, as configured in envrun.toml."""
+    """Execute COMMAND with dynamically-sourced environment variables, as configured in .envrun.toml."""
     interactive = not non_interactive
     config_path = get_config_path(os.getcwd())
     config = {}
@@ -27,8 +27,8 @@ def main(non_interactive, isolated, command):
         config = toml.load(config_path)
 
     if not isolated:
-        # We must convert to dict, os.environ doesn't handle unicode keys.
-        env = {k:v for k,v in os.environ.items()}
+        # We must copy to dict, os.environ can't handle unicode keys.
+        env = os.environ.copy()
 
     env.update(get_vars(config, interactive))
 
