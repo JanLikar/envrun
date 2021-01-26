@@ -3,11 +3,12 @@
 `envrun` is a CLI tool that runs a command with dynamically-sourced env variables.
 
 > Sick of scrubbing secrets from `.bash_history`?
-> Do your fingers hurt from hitting ctrl+c and ctrl+v while copying the API token - for 154th time?
+> Do your fingers hurt from hitting ctrl+c and ctrl+v
+> while copying the API token - for 154th time?
 > This is a tool for you.
 
 When working on modern projects it is often difficult to manage application secrets in a sane way.
-Sure, there are soleutions out there. Some of them even work just fine!
+Sure, there are solutions out there. Some of them even work just fine!
 
 So... why a new tool? I wanted a tool that would fit into many different workflows.
 When locally running commands that need to have access to secrets, managing deployments with multiple differing sets
