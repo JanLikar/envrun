@@ -118,26 +118,26 @@ This will generate `nginx.conf` from `nginx.conf.tmpl` and replace all strings l
 ### const
 Used for setting static env variables.
 
-    [const.vars]
+    [vars.const]
     PATH = "/usr/bin"
 
 ### file
 Used for setting a variable to contents of a file.
 
-    [file.vars]
+    [vars.const]
     PUBKEY = "~/.ssh/id_rsa.pub"
 
 
 ### env
 Generally useful only when used with `--isolated`. Used for passing or renaming specific env vars.
 
-    [env.vars]
+    [vars.env]
     RENAMED_PATH = "PATH"
 
 ### shell
 Used for setting static env variables.
 
-    [shell.vars]
+    [vars.shell]
     GIT_REF = "git show-ref | head -1"
 
 ### keyring
@@ -147,7 +147,7 @@ most notably Gnome keyring and KSecretsService. MacOS and Windows is still a wor
 Additionally, from version 2.5 KeepassXC should also work on systems that are D-Bus enabled (Linux). See See https://avaldes.co/2020/01/28/secret-service-keepassxc.html for details.
 
 
-    [keyring.vars.MY_SECRET]
+    [vars.keyring.MY_SECRET]
     key = "my-secret"
 
 

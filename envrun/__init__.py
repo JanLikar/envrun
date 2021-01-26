@@ -9,6 +9,7 @@ import sys
 import typing
 
 from . import default_backends
+from .utils import bail
 
 
 @click.command()
@@ -38,10 +39,10 @@ def main(non_interactive, isolated, command):
 
 
 def get_config_path(cwd: str):
-    candidates = [pathlib.PurePath(cwd).joinpath("envrun.toml")]
-    candidates.extend(p.joinpath("envrun.toml") for p in pathlib.PurePath(cwd).parents)
+    candidates = [pathlib.PurePath(cwd).joinpath(".envrun.toml")]
+    candidates.extend(p.joinpath(".envrun.toml") for p in reversed(pathlib.PurePath(cwd).parents))
 
-    for c in reversed(candidates):
+    for c in candidates:
         if pathlib.Path(*c.parts).exists():
             return c
 
@@ -51,7 +52,7 @@ def get_config_path(cwd: str):
 def get_vars(config, interactive: bool):
     output_vars = {}
 
-    backends = register_backends(config)
+    backends = register_backends(config, interactive)
 
     for backend_name, vars in config.get("vars", {}).items():
         if backend_name not in backends:
@@ -98,12 +99,12 @@ def _var_key(var_name: str, var_conf: typing.Union[str, dict]):
         return var_name
 
 
-def register_backends(config):
+def register_backends(config: dict, interactive: bool):
     available_backends = default_backends.get_available()
     registered_backends = {}
 
     for name, backend in available_backends.items():
-        registered_backends[name] = backend(name=name, backend_config={})
+        registered_backends[name] = backend(name=name, interactive=interactive, backend_config={})
 
     available_backends.update(extra_backends())
 
@@ -111,7 +112,7 @@ def register_backends(config):
         backend_type = backend["type"]
 
         if backend_type in available_backends:
-            registered_backends[name] = available_backends[backend_type](name=name, backend_config=backend)
+            registered_backends[name] = available_backends[backend_type](name=name, interactive=interactive, backend_config=backend)
         else:
             bail(f"Unsupported backend type: {backend_type}")
 
@@ -131,14 +132,3 @@ def handle_missing(backend: default_backends.Backend, key: str, interactive: boo
         bail(f"Key '{backend.name}.{key}' not set. Set it manually or use -i for a prompt.")
 
     return input(f"Value for {backend.name}.{key}> ")
-
-
-def eprint(*args, **kwargs):
-    """Print to stderr."""
-    print(*args, file=sys.stderr, **kwargs)
-
-
-def bail(error: str):
-    """Print message to stderr and exit with an error code."""
-    eprint(error)
-    sys.exit(1)

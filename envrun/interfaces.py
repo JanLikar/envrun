@@ -1,6 +1,7 @@
 class Backend:
-    def __init__(self, name, backend_config) -> None:
+    def __init__(self, name, interactive, backend_config) -> None:
         self.name = name
+        self.interactive = interactive
         self.config = backend_config
 
     def __setitem__(self, key: str, value: str):
