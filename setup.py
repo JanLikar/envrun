@@ -19,6 +19,8 @@ dev_require = [
     'mypy',
     'pdbpp',
     'pip-tools',
+    'types-setuptools',
+    'types-toml',
 ]
 
 setup(

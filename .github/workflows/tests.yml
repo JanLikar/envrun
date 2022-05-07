@@ -17,9 +17,7 @@ jobs:
           python-version: '3.10'
           architecture: x64
       - name: Install deps
-        run: |
-          pip install ".[dev]"
-          mypy --install-types
+        run: pip install ".[dev]"
       - name: MyPy
         run: mypy envrun
       - name: Black
