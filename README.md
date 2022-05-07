@@ -109,7 +109,7 @@ Environment variables provide a common ground, as they are supported by the majo
 This is where `envrun` comes into play - it provides a concise and extensible way of defining and passing the variables to tools like `terraform` and `ansible`.
 
 ### Generating config files
-Combined with the excelent [envsubst](https://linux.die.net/man/1/envsubst), `envrun` can be used as a rudimentary templating engine.
+Combined with the excellent [envsubst](https://linux.die.net/man/1/envsubst), `envrun` can be used as a rudimentary templating engine.
 
     envrun envsubst < nginx.conf.tmpl > nginx.conf
 
