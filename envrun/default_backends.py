@@ -1,5 +1,5 @@
 import subprocess
-from typing import List, Optional
+from typing import Dict, Optional, Type
 
 import os
 
@@ -7,7 +7,7 @@ from .interfaces import Backend
 from .utils import bail
 
 
-def get_available() -> List[Backend]:
+def get_available() -> Dict[str, Type[Backend]]:
     return {
         "env": Env,
         "file": File,
@@ -38,15 +38,13 @@ class Const(Backend):
 
 class Shell(Backend):
     def __getitem__(self, key: str) -> str:
-        r = subprocess.run(
-            key, capture_output=True, check=True, shell=True, text=True
-        )
+        r = subprocess.run(key, capture_output=True, check=True, shell=True, text=True)
 
         return r.stdout
 
 
 class Keyring(Backend):
-    def __getitem__(self, key: str) -> Optional[str]:
+    def __getitem__(self, key: str) -> str:
         import secretstorage
 
         connection = secretstorage.dbus_init()
@@ -56,14 +54,12 @@ class Keyring(Backend):
 
         try:
             secret = next(
-                collection.search_items(
-                    {"application": "envrun", "key": str(key)}
-                )
+                collection.search_items({"application": "envrun", "key": str(key)})
             )
         except StopIteration:
             raise KeyError()
 
-        return secret.get_secret()
+        return secret.get_secret().decode("utf-8")
 
     def __setitem__(self, key: str, secret: str):
         import secretstorage

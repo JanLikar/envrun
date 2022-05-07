@@ -13,8 +13,10 @@ from .utils import bail
 
 
 @click.command()
-@click.option("--non-interactive", is_flag=True, help="Don't prompt for missing variable values.")
-@click.option('--isolated', is_flag=True, help="Start with an empty environment.")
+@click.option(
+    "--non-interactive", is_flag=True, help="Don't prompt for missing variable values."
+)
+@click.option("--isolated", is_flag=True, help="Start with an empty environment.")
 @click.argument("command", required=True, nargs=-1)
 def main(non_interactive, isolated, command):
     """Execute COMMAND with dynamically-sourced environment variables, as configured in .envrun.toml."""
@@ -41,7 +43,9 @@ def main(non_interactive, isolated, command):
 
 def get_config_path(cwd: str):
     candidates = [pathlib.PurePath(cwd).joinpath(".envrun.toml")]
-    candidates.extend(p.joinpath(".envrun.toml") for p in reversed(pathlib.PurePath(cwd).parents))
+    candidates.extend(
+        p.joinpath(".envrun.toml") for p in reversed(pathlib.PurePath(cwd).parents)
+    )
 
     for c in candidates:
         if pathlib.Path(*c.parts).exists():
@@ -70,8 +74,8 @@ def get_vars(config, interactive: bool):
 def get_var(
     backend: default_backends.Backend,
     name: str,
-    conf: typing.Union[str, dict, list],
-    interactive: bool
+    conf: typing.Union[str, dict],
+    interactive: bool,
 ) -> str:
     if not isinstance(conf, (str, dict)):
         bail(f"{name} must be either a string or a mapping.")
@@ -105,15 +109,19 @@ def register_backends(config: dict, interactive: bool):
     registered_backends = {}
 
     for name, backend in available_backends.items():
-        registered_backends[name] = backend(name=name, interactive=interactive, backend_config={})
+        registered_backends[name] = backend(
+            name=name, interactive=interactive, backend_config={}
+        )
 
     available_backends.update(extra_backends())
 
-    for name, backend in config.get("backends", {}).items():
-        backend_type = backend["type"]
+    for name, backend_definition in config.get("backends", {}).items():
+        backend_type = backend_definition["type"]
 
         if backend_type in available_backends:
-            registered_backends[name] = available_backends[backend_type](name=name, interactive=interactive, backend_config=backend)
+            registered_backends[name] = available_backends[backend_type](
+                name=name, interactive=interactive, backend_config=backend
+            )
         else:
             bail(f"Unsupported backend type: {backend_type}")
 
@@ -123,13 +131,16 @@ def register_backends(config: dict, interactive: bool):
 def extra_backends() -> dict:
     return {
         entry_point.name: entry_point.load()
-        for entry_point
-        in pkg_resources.iter_entry_points('envrun.backends')
+        for entry_point in pkg_resources.iter_entry_points("envrun.backends")
     }
 
 
-def handle_missing(backend: default_backends.Backend, key: str, interactive: bool) -> str:
+def handle_missing(
+    backend: default_backends.Backend, key: str, interactive: bool
+) -> str:
     if not interactive:
-        bail(f"Key '{backend.name}.{key}' not set. Set it manually or use -i for a prompt.")
+        bail(
+            f"Key '{backend.name}.{key}' not set. Set it manually or use -i for a prompt."
+        )
 
     return input(f"Value for {backend.name}.{key}> ")

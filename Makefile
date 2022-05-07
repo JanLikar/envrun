@@ -1,7 +1,5 @@
-venv:
+venv: setup.py
 	python3 -m venv venv
-
-develop: venv
 	venv/bin/pip install -e ".[dev]"
 
 dist: clean venv
